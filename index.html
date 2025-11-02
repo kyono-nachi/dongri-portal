@@ -427,7 +427,7 @@
                 パスワードを入力してください。
             </p>
             <input type="password" id="memberPassword" placeholder="パスワード">
-            <button class="btn btn-large" onclick="verifyMemberPassword()">ログイン</button>
+            <button id="memberLoginBtn" class="btn btn-large" onclick="verifyMemberPassword()">ログイン</button>
         </div>
     </div>
 
@@ -451,7 +451,7 @@
             <p class="info-text">IDを入力してください</p>
             <input type="text" id="existingIDInput" placeholder="例: A7K3M9" maxlength="10">
             <p class="info-text" style="font-size: 0.85em;">※「DNG-」は自動で付きます</p>
-            <button class="btn btn-large" onclick="loginExistingUser()">ログイン</button>
+            <button id="loginBtn" class="btn btn-large" onclick="loginExistingUser()">ログイン</button>
             <div style="text-align: center; margin: 15px 0; color: #888;">または</div>
             <button class="btn btn-large btn-secondary" onclick="showQRScanner()">📱 QRコードでログイン</button>
             <button class="btn btn-large btn-secondary" onclick="backToFirstTime()">← 戻る</button>
@@ -616,6 +616,7 @@
         // 既存ユーザーログイン
         async function loginExistingUser() {
             let uniqueID = document.getElementById('existingIDInput').value.trim().toUpperCase();
+            const loginBtn = document.getElementById('loginBtn');
             
             if (!uniqueID) {
                 alert('IDを入力してください');
@@ -627,24 +628,58 @@
                 uniqueID = 'DNG-' + uniqueID;
             }
 
+            // ボタンを無効化してローディング表示
+            loginBtn.disabled = true;
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '⏳ 処理中...';
+            loginBtn.style.opacity = '0.6';
+
             try {
                 const result = await callAPI('getUser', { uniqueID: uniqueID });
                 
                 if (result.success) {
+                    // 成功時
+                    loginBtn.innerHTML = '✓ 完了';
+                    
                     // ローカルストレージに保存
                     localStorage.setItem('playerUniqueID', result.data.uniqueID);
                     localStorage.setItem('displayName', result.data.displayName);
 
                     // モーダルを閉じてユーザー情報表示
-                    document.getElementById('existingUserModal').classList.remove('active');
-                    showUserInfo(result.data.uniqueID, result.data.displayName);
-                    loadBalance(result.data.uniqueID);
-                    
-                    alert('ログイン成功！おかえりなさい、' + result.data.displayName + 'さん');
+                    setTimeout(() => {
+                        document.getElementById('existingUserModal').classList.remove('active');
+                        showUserInfo(result.data.uniqueID, result.data.displayName);
+                        loadBalance(result.data.uniqueID);
+                        
+                        alert('ログイン成功！おかえりなさい、' + result.data.displayName + 'さん');
+                        
+                        // ボタンを元に戻す
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = originalText;
+                        loginBtn.style.opacity = '1';
+                    }, 500);
                 } else {
+                    // ID不一致
+                    loginBtn.innerHTML = '✗ IDが見つかりません';
+                    loginBtn.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = originalText;
+                    }, 2000);
+                    
                     alert('IDが見つかりません');
                 }
             } catch (error) {
+                // エラー時
+                loginBtn.innerHTML = '✗ エラー';
+                loginBtn.style.opacity = '1';
+                
+                setTimeout(() => {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = originalText;
+                }, 2000);
+                
                 alert('ログインに失敗しました: ' + error.message);
             }
         }
@@ -787,18 +822,51 @@
         // 会員パスワード検証
         function verifyMemberPassword() {
             const password = document.getElementById('memberPassword').value;
+            const memberLoginBtn = document.getElementById('memberLoginBtn');
             
-            if (password === 'kumakuma') {
-                // 認証成功
-                localStorage.setItem('memberAuthenticated', 'true');
-                document.getElementById('memberAuthModal').classList.remove('active');
-                
-                // ユーザーチェックへ進む
-                checkUser();
-            } else {
-                alert('パスワードが違います');
-                document.getElementById('memberPassword').value = '';
+            if (!password) {
+                alert('パスワードを入力してください');
+                return;
             }
+            
+            // ボタンを無効化してローディング表示
+            memberLoginBtn.disabled = true;
+            const originalText = memberLoginBtn.innerHTML;
+            memberLoginBtn.innerHTML = '⏳ 確認中...';
+            memberLoginBtn.style.opacity = '0.6';
+            
+            // パスワード確認処理（少し遅延を入れて処理感を出す）
+            setTimeout(() => {
+                if (password === 'kumakuma') {
+                    // 認証成功
+                    memberLoginBtn.innerHTML = '✓ 認証成功';
+                    
+                    setTimeout(() => {
+                        localStorage.setItem('memberAuthenticated', 'true');
+                        document.getElementById('memberAuthModal').classList.remove('active');
+                        
+                        // ユーザーチェックへ進む
+                        checkUser();
+                        
+                        // ボタンを元に戻す
+                        memberLoginBtn.disabled = false;
+                        memberLoginBtn.innerHTML = originalText;
+                        memberLoginBtn.style.opacity = '1';
+                    }, 500);
+                } else {
+                    // 認証失敗
+                    memberLoginBtn.innerHTML = '✗ パスワードが違います';
+                    memberLoginBtn.style.opacity = '1';
+                    document.getElementById('memberPassword').value = '';
+                    
+                    setTimeout(() => {
+                        memberLoginBtn.disabled = false;
+                        memberLoginBtn.innerHTML = originalText;
+                    }, 2000);
+                    
+                    alert('パスワードが違います');
+                }
+            }, 300); // 300ms遅延で処理感を出す
         }
 
         // 全キャッシュをクリア（デバッグ用）
