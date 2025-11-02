@@ -631,7 +631,8 @@
         <div id="startScreen" class="screen active">
             <div style="position: relative;">
                 <h1>DonGri GAME</h1>
-                <button onclick="clearAllData()" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.05); border: none; font-size: 1.5em; cursor: pointer; color: #666; padding: 5px 10px; border-radius: 5px; line-height: 1; opacity: 0.4;">⋮</button>
+                <button onclick="clearAllData()" style="position: absolute; top: 0; left: 0; background: rgba(0,0,0,0.05); border: none; font-size: 1.5em; cursor: pointer; color: #666; padding: 5px 10px; border-radius: 5px; line-height: 1; opacity: 0.4;">⋮</button>
+                <button onclick="openHelpModal()" style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.05); border: none; font-size: 1.2em; cursor: pointer; color: #888; padding: 5px 10px; border-radius: 5px; line-height: 1; opacity: 0.5;">?</button>
             </div>
             <h2 style="margin-top: 5px; margin-bottom: 20px;">HIGH & LOW</h2>
             <div class="input-group">
@@ -652,6 +653,13 @@
                 Loan Total: <span id="totalLoanDNG">0</span> DNG
             </div>
             
+            <!-- 救済チケット表示（シンプル版） -->
+            <div style="margin-top: 8px; font-size: 0.85em; color: #888;">
+                <span style="cursor: pointer; color: #d4af37;" onclick="openRescueTicketModal()">
+                    🎫 救済チケット: <span id="rescueTicketCount" style="font-weight: bold;">3</span>枚
+                </span>
+            </div>
+            
             <!-- 最終清算ボタン -->
             <button class="btn" onclick="finalSettlement()" style="margin-top: 20px; background: linear-gradient(135deg, #b8b8b8 0%, #e8e8e8 50%, #b8b8b8 100%); color: #333; font-size: 1.05em; padding: 15px 30px; box-shadow: 0 5px 20px rgba(158, 158, 158, 0.5);">
                 最終清算してBankに貯蔵
@@ -665,6 +673,9 @@
                 <div style="font-size: 0.8em; color: #888; margin-bottom: 12px; letter-spacing: 1px;">OPTIONS</div>
                 <button class="btn btn-small" onclick="openDesignUnlockModal()" style="background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; padding: 10px 20px; box-shadow: none;">
                     🎴 CARD DESIGN
+                </button>
+                <button class="btn btn-small" onclick="location.href='../shop/'" style="background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; padding: 10px 20px; box-shadow: none;">
+                    🛒 SHOP
                 </button>
                 <button class="btn btn-small" onclick="location.href='../'" style="background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; padding: 10px 20px; box-shadow: none;">
                     🏠 PORTAL
@@ -710,7 +721,7 @@
             </div>
 
             <div style="margin-top: 15px;">
-                <button class="btn btn-small" onclick="cashOut()">清算して終了</button>
+                <button class="btn btn-small" onclick="cashOut()">このゲームを清算して終了</button>
             </div>
         </div>
 
@@ -857,6 +868,215 @@
         </div>
     </div>
 
+    <!-- 救済チケットモーダル -->
+    <div id="rescueTicketModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 10000; justify-content: center; align-items: center; overflow-y: auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1a0000 0%, #000000 50%, #1a0000 100%); border: 3px solid #d4af37; border-radius: 20px; padding: 30px; max-width: 450px; width: 100%; box-shadow: 0 0 50px rgba(212, 175, 55, 0.5); margin: auto;">
+            <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">🎫 救済チケット</h2>
+            
+            <!-- 説明 -->
+            <div style="margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.1); border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.3);">
+                <div style="font-size: 1em; color: #fff; line-height: 1.8; margin-bottom: 15px;">
+                    <strong style="color: #d4af37;">救済チケットとは？</strong><br>
+                    累積したローンを<span style="color: #d4af37; font-weight: bold;">完全にゼロ</span>にできる特別なアイテムです。
+                </div>
+                <div style="font-size: 0.9em; color: #aaa; line-height: 1.6;">
+                    ・現在のローン: <span id="modalCurrentLoan" style="color: #f44336; font-weight: bold;">0</span> DNG<br>
+                    ・所持チケット数: <span id="modalTicketCount" style="color: #d4af37; font-weight: bold;">0</span>枚
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <button id="useTicketBtn" class="btn" onclick="confirmUseRescueTicket()" style="width: 100%; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000; font-size: 1.1em; margin-bottom: 10px;">
+                🎫 救済チケットを使用する
+            </button>
+
+            <div style="text-align: center; margin: 15px 0; font-size: 0.9em; color: #888;">
+                または
+            </div>
+
+            <button class="btn" onclick="goToShop()" style="width: 100%; background: rgba(212, 175, 55, 0.1); color: #d4af37; border: 2px solid #d4af37; font-size: 1em; margin-bottom: 15px; box-shadow: none;">
+                🛒 SHOPで追加購入 (100 DNG)
+            </button>
+
+            <button class="btn btn-secondary" onclick="closeRescueTicketModal()" style="width: 100%; background: rgba(100, 100, 100, 0.3); color: #aaa;">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- チュートリアル/ヘルプモーダル -->
+    <div id="helpModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; justify-content: center; align-items: center; overflow-y: auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1a0000 0%, #000000 50%, #1a0000 100%); border: 3px solid #d4af37; border-radius: 20px; padding: 30px 20px; max-width: 500px; width: 100%; box-shadow: 0 0 50px rgba(212, 175, 55, 0.5); margin: auto;">
+            
+            <!-- スライド1: ようこそ -->
+            <div id="tutorialSlide1" class="tutorial-slide">
+                <div style="position: relative;">
+                    <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">🎴 ようこそ！</h2>
+                    <button onclick="skipTutorial()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: #888; font-size: 0.9em; cursor: pointer; text-decoration: underline; padding: 0;">Skip</button>
+                </div>
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="font-size: 1.5em; color: #d4af37; font-family: 'Bebas Neue', sans-serif; margin-bottom: 10px;">DonGri HIGH & LOW</div>
+                </div>
+                <div style="font-size: 1em; color: #fff; line-height: 1.8; margin-bottom: 20px;">
+                    カードの数字を予想して<br>
+                    DNGを稼ぐハイローゲームです<br><br>
+                    次のカードが現在のカードより<br>
+                    <strong style="color: #4CAF50;">HIGH（大きい）</strong>か<strong style="color: #f44336;">LOW（小さい）</strong>かを<br>
+                    予測してください！
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center;">
+                        <span style="width: 30px; height: 6px; background: #d4af37; border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn" onclick="nextTutorialSlide()" style="flex: 0 0 auto; min-width: 120px; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000;">Next</button>
+                </div>
+            </div>
+
+            <!-- スライド2: お金の仕組み -->
+            <div id="tutorialSlide2" class="tutorial-slide" style="display: none;">
+                <div style="position: relative;">
+                    <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">💰 お金の仕組み</h2>
+                    <button onclick="skipTutorial()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: #888; font-size: 0.9em; cursor: pointer; text-decoration: underline; padding: 0;">Skip</button>
+                </div>
+                <div style="font-size: 0.95em; color: #fff; line-height: 1.8; margin-bottom: 20px;">
+                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; border-radius: 5px;">
+                        <strong style="color: #f44336;">【Loan（ローン）】</strong><br>
+                        ゲーム開始時に借りるお金<br>
+                        負けると増えていきます
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; border-radius: 5px;">
+                        <strong style="color: #4CAF50;">【Get Total】</strong><br>
+                        勝って獲得したお金の合計
+                    </div>
+                    <div style="padding: 12px; background: rgba(212, 175, 55, 0.1); border-left: 4px solid #d4af37; border-radius: 5px;">
+                        <strong style="color: #d4af37;">【純益 = Get Total - Loan】</strong><br>
+                        これがプラスなら利益が出ています！
+                    </div>
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center;">
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: #d4af37; border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: space-between;">
+                    <button class="btn btn-secondary" onclick="prevTutorialSlide()" style="flex: 0 0 auto; min-width: 100px; background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; box-shadow: none;">Back</button>
+                    <button class="btn" onclick="nextTutorialSlide()" style="flex: 0 0 auto; min-width: 120px; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000;">Next</button>
+                </div>
+            </div>
+
+            <!-- スライド3: 清算とBank -->
+            <div id="tutorialSlide3" class="tutorial-slide" style="display: none;">
+                <div style="position: relative;">
+                    <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">🏦 清算と Bank</h2>
+                    <button onclick="skipTutorial()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: #888; font-size: 0.9em; cursor: pointer; text-decoration: underline; padding: 0;">Skip</button>
+                </div>
+                <div style="font-size: 0.95em; color: #fff; line-height: 1.8; margin-bottom: 20px;">
+                    ゲームを終了する時は<strong style="color: #d4af37;">「清算」</strong>します<br><br>
+                    <div style="margin-bottom: 10px; padding: 12px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; border-radius: 5px;">
+                        純益がプラス → <strong style="color: #4CAF50;">DonGri Bankに貯蔵✨</strong>
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 12px; background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; border-radius: 5px;">
+                        純益がマイナス → <strong style="color: #f44336;">ローンが残ります😰</strong>
+                    </div>
+                    Bankに貯めたDNGは<br>
+                    <strong style="color: #d4af37;">SHOPでアイテムを買えます！</strong>
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center;">
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: #d4af37; border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: space-between;">
+                    <button class="btn btn-secondary" onclick="prevTutorialSlide()" style="flex: 0 0 auto; min-width: 100px; background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; box-shadow: none;">Back</button>
+                    <button class="btn" onclick="nextTutorialSlide()" style="flex: 0 0 auto; min-width: 120px; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000;">Next</button>
+                </div>
+            </div>
+
+            <!-- スライド4: 救済チケット -->
+            <div id="tutorialSlide4" class="tutorial-slide" style="display: none;">
+                <div style="position: relative;">
+                    <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">🎫 救済チケット</h2>
+                    <button onclick="skipTutorial()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: #888; font-size: 0.9em; cursor: pointer; text-decoration: underline; padding: 0;">Skip</button>
+                </div>
+                <div style="font-size: 0.95em; color: #fff; line-height: 1.8; margin-bottom: 20px;">
+                    ローンが膨らんだ時の<br>
+                    <strong style="color: #d4af37;">救済アイテム</strong><br><br>
+                    使うとローンが<br>
+                    <strong style="color: #4CAF50; font-size: 1.2em;">完全にゼロ</strong>になります<br><br>
+                    <div style="padding: 15px; background: rgba(212, 175, 55, 0.15); border: 2px solid #d4af37; border-radius: 10px; text-align: center; margin: 15px 0;">
+                        <div style="font-size: 1.2em; color: #d4af37; margin-bottom: 8px;">【初回特典】</div>
+                        <div style="font-size: 1.5em; color: #d4af37;">🎫 3枚プレゼント中！</div>
+                    </div>
+                    追加購入はSHOPで可能です<br>
+                    <span style="color: #888; font-size: 0.9em;">(100 DNG / 枚)</span>
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center;">
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: #d4af37; border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: space-between;">
+                    <button class="btn btn-secondary" onclick="prevTutorialSlide()" style="flex: 0 0 auto; min-width: 100px; background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; box-shadow: none;">Back</button>
+                    <button class="btn" onclick="nextTutorialSlide()" style="flex: 0 0 auto; min-width: 120px; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000;">Next</button>
+                </div>
+            </div>
+
+            <!-- スライド5: カードデザイン -->
+            <div id="tutorialSlide5" class="tutorial-slide" style="display: none;">
+                <div style="position: relative;">
+                    <h2 style="color: #d4af37; margin-bottom: 20px; text-align: center; font-family: 'Bebas Neue', sans-serif; font-size: 2em;">🎴 カードデザイン</h2>
+                    <button onclick="skipTutorial()" style="position: absolute; top: 0; right: 0; background: none; border: none; color: #888; font-size: 0.9em; cursor: pointer; text-decoration: underline; padding: 0;">Skip</button>
+                </div>
+                <div style="font-size: 0.95em; color: #fff; line-height: 1.8; margin-bottom: 20px;">
+                    このゲームの<strong style="color: #d4af37; font-size: 1.1em;">目玉機能</strong>です！<br><br>
+                    <div style="padding: 15px; background: rgba(212, 175, 55, 0.15); border: 2px solid #d4af37; border-radius: 10px; margin: 15px 0;">
+                        <strong style="color: #d4af37;">配信者が作った特別なカードデザイン</strong>を<br>
+                        <strong style="color: #4CAF50;">チケットで解放</strong>できます！
+                    </div>
+                    <div style="font-size: 0.9em; color: #aaa; line-height: 1.6; margin-top: 15px;">
+                        💡 遊び方<br>
+                        ① ゲームをプレイしてDNGを貯める<br>
+                        ② SHOPでデザインチケットを購入<br>
+                        ③ OPTIONSから好きなデザインを解放<br>
+                        ④ 推しのデザインでプレイ！
+                    </div>
+                </div>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center;">
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: rgba(212, 175, 55, 0.3); border-radius: 3px;"></span>
+                        <span style="width: 30px; height: 6px; background: #d4af37; border-radius: 3px;"></span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: space-between;">
+                    <button class="btn btn-secondary" onclick="prevTutorialSlide()" style="flex: 0 0 auto; min-width: 100px; background: rgba(212, 175, 55, 0.05); color: #d4af37; border: 2px solid #d4af37; box-shadow: none;">Back</button>
+                    <button class="btn" onclick="closeHelpModal()" style="flex: 0 0 auto; min-width: 140px; background: linear-gradient(135deg, #d4af37 0%, #f4e5b0 50%, #d4af37 100%); color: #000; font-size: 1em;">ゲームを始めましょう！</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <script>
         // API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFxDv-KWnawfsrC2Kl82Gavo_s0ZGqEA4zrPPc3LVY9S3FuL_dC7QgkYv5hMeeiQo8/exec';
@@ -873,6 +1093,7 @@
         let isAllInMode = false; // オールインモードかどうか
         let sessionID = ''; // セッションID
         let sessionStartTime = 0; // セッション開始時刻
+        let rescueTickets = 3; // 救済チケット（初期値3枚）
 
         const suits = ['♠', '♥', '♦', '♣'];
         const redSuits = ['♥', '♦'];
@@ -958,6 +1179,11 @@
             if (savedFirstPlayDate) {
                 firstPlayDate = savedFirstPlayDate;
             }
+            const savedRescueTickets = localStorage.getItem('rescueTickets');
+            if (savedRescueTickets) {
+                rescueTickets = parseInt(savedRescueTickets);
+            }
+            updateRescueTicketDisplay();
         }
 
         function saveLoanDNG() {
@@ -965,10 +1191,214 @@
             localStorage.setItem('freeDNG', freeDNG);
             localStorage.setItem('gameCount', gameCount);
             localStorage.setItem('firstPlayDate', firstPlayDate);
+            localStorage.setItem('rescueTickets', rescueTickets);
+        }
+
+        // 救済チケット表示を更新
+        function updateRescueTicketDisplay() {
+            const totalTickets = window.totalRescueTickets || rescueTickets;
+            const ticketCountEl = document.getElementById('rescueTicketCount');
+            
+            if (ticketCountEl) {
+                ticketCountEl.textContent = totalTickets;
+            }
+        }
+
+        // 救済チケットモーダルを開く
+        function openRescueTicketModal() {
+            const totalTickets = window.totalRescueTickets || rescueTickets;
+            
+            // モーダル内の情報を更新
+            document.getElementById('modalCurrentLoan').textContent = totalLoanDNG.toLocaleString();
+            document.getElementById('modalTicketCount').textContent = totalTickets;
+            
+            // 使用ボタンの有効/無効
+            const useBtn = document.getElementById('useTicketBtn');
+            if (totalTickets > 0 && totalLoanDNG > 0) {
+                useBtn.disabled = false;
+                useBtn.style.opacity = '1';
+            } else {
+                useBtn.disabled = true;
+                useBtn.style.opacity = '0.5';
+            }
+            
+            document.getElementById('rescueTicketModal').style.display = 'flex';
+        }
+
+        // 救済チケットモーダルを閉じる
+        function closeRescueTicketModal() {
+            document.getElementById('rescueTicketModal').style.display = 'none';
+        }
+
+        // SHOPページに移動
+        function goToShop() {
+            window.location.href = '../shop/';
+        }
+
+        // 救済チケット使用確認
+        async function confirmUseRescueTicket() {
+            const totalTickets = window.totalRescueTickets || rescueTickets;
+            
+            if (totalTickets <= 0) {
+                alert('救済チケットがありません。');
+                return;
+            }
+            
+            if (totalLoanDNG <= 0) {
+                alert('ローンがありません。');
+                return;
+            }
+            
+            const confirmMessage = `救済チケットを使用して、ローン ${totalLoanDNG.toLocaleString()} DNG をゼロにしますか？\n\n※救済チケットが1枚消費されます`;
+            
+            if (confirm(confirmMessage)) {
+                // localStorage分から優先的に消費
+                if (rescueTickets > 0) {
+                    rescueTickets--;
+                    saveLoanDNG();
+                } else {
+                    // localStorage分がない場合はAPI分から消費
+                    alert('※この機能は現在、初回付与分のみ対応しています。\nSHOP購入分の消費機能は今後実装予定です。');
+                    return;
+                }
+                
+                totalLoanDNG = 0;
+                gameLoanDNG = 0;
+                saveLoanDNG();
+                
+                document.getElementById('totalLoanDNG').textContent = totalLoanDNG;
+                
+                // チケット数を再同期
+                await syncRescueTickets();
+                
+                // モーダルを閉じる
+                closeRescueTicketModal();
+                
+                alert('💊 救済チケットを使用しました！\nローンがゼロになりました！');
+            }
+        }
+
+        // API購入分の救済チケット数を取得
+        async function loadRescueTicketsFromAPI() {
+            const uniqueID = localStorage.getItem('playerUniqueID');
+            if (!uniqueID) return 0;
+            
+            try {
+                const result = await callAPI('getUserItems', { uniqueID: uniqueID });
+                if (result.success && result.data.items) {
+                    const rescueItem = result.data.items.find(item => 
+                        item.itemType === 'ticket' && item.itemID === 'rescue'
+                    );
+                    return rescueItem ? rescueItem.quantity : 0;
+                }
+            } catch (error) {
+                console.error('Error loading rescue tickets from API:', error);
+            }
+            return 0;
+        }
+
+        // 救済チケット数を更新（localStorage分 + API購入分）
+        async function syncRescueTickets() {
+            const apiTickets = await loadRescueTicketsFromAPI();
+            const localTickets = rescueTickets; // localStorageから読み込んだ分（初回3枚）
+            
+            // 表示用は合算
+            const totalTickets = localTickets + apiTickets;
+            
+            // 表示を更新
+            const ticketCountEl = document.getElementById('rescueTicketCount');
+            if (ticketCountEl) {
+                ticketCountEl.textContent = totalTickets;
+            }
+            
+            // 実際の所持数を保存（内部的には分けて管理）
+            window.apiRescueTickets = apiTickets;
+            window.totalRescueTickets = totalTickets;
+            
+            updateRescueTicketDisplay();
+        }
+
+        // API呼び出しヘルパー関数
+        async function callAPI(action, data) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: action,
+                    ...data
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            return await response.json();
+        }
+
+        // チュートリアル関連の変数
+        let currentTutorialSlide = 1;
+
+        // ヘルプモーダルを開く
+        function openHelpModal() {
+            currentTutorialSlide = 1;
+            showTutorialSlide(1);
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        // ヘルプモーダルを閉じる
+        function closeHelpModal() {
+            document.getElementById('helpModal').style.display = 'none';
+            // 初回表示済みフラグを立てる
+            localStorage.setItem('hasSeenTutorial', 'true');
+        }
+
+        // チュートリアルスライドを表示
+        function showTutorialSlide(slideNumber) {
+            // 全スライドを非表示
+            for (let i = 1; i <= 5; i++) {
+                const slide = document.getElementById('tutorialSlide' + i);
+                if (slide) slide.style.display = 'none';
+            }
+            // 指定スライドを表示
+            const targetSlide = document.getElementById('tutorialSlide' + slideNumber);
+            if (targetSlide) targetSlide.style.display = 'block';
+            currentTutorialSlide = slideNumber;
+        }
+
+        // 次のスライドへ
+        function nextTutorialSlide() {
+            if (currentTutorialSlide < 5) {
+                showTutorialSlide(currentTutorialSlide + 1);
+            }
+        }
+
+        // 前のスライドへ
+        function prevTutorialSlide() {
+            if (currentTutorialSlide > 1) {
+                showTutorialSlide(currentTutorialSlide - 1);
+            }
+        }
+
+        // チュートリアルをスキップ
+        function skipTutorial() {
+            closeHelpModal();
+        }
+
+        // 初回表示チェック
+        function checkFirstVisit() {
+            const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+            if (!hasSeenTutorial) {
+                // 初回訪問なので自動でチュートリアルを表示
+                setTimeout(() => {
+                    openHelpModal();
+                }, 500); // 0.5秒後に表示
+            }
         }
 
         window.onload = function() {
             loadLoanDNG();
+            syncRescueTickets(); // API購入分も含めてチケット数を同期
+            checkFirstVisit(); // 初回訪問チェック
         };
 
         function selectAmount(amount) {
@@ -1004,6 +1434,7 @@
             document.getElementById('currentDNG').textContent = currentDNG;
             document.getElementById('totalLoanDNG').textContent = totalLoanDNG;
             document.getElementById('getTotalDNG').textContent = freeDNG;
+            updateRescueTicketDisplay();
             
             switchScreen('startScreen', 'gameScreen');
             dealNewCard();
