@@ -103,6 +103,12 @@
             margin-left: auto;
             margin-right: auto;
         }
+        
+        /* グリッド内のloadingは中央配置 */
+        .products-grid .loading {
+            grid-column: 1 / -1;
+            justify-self: center;
+        }
 
         .product-item {
             background: rgba(255, 255, 255, 0.05);
@@ -272,6 +278,8 @@
             text-align: center;
             color: #d4af37;
             padding: 20px;
+            width: 100%;
+            display: block;
         }
 
         .empty-message {
