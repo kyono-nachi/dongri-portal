@@ -341,9 +341,52 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* グローバルローディング */
+        #globalLoading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid #d4af37;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #d4af37;
+            font-size: 1.2em;
+            margin-top: 20px;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
+    <!-- グローバルローディングオーバーレイ -->
+    <div id="globalLoading" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">読み込み中...</div>
+    </div>
+
     <div class="container">
         <!-- ヘッダー -->
         <div class="header">
@@ -406,6 +449,20 @@
     </div>
 
     <script>
+        // グローバルローディング表示
+        function showGlobalLoading(message = '読み込み中...') {
+            const loadingEl = document.getElementById('globalLoading');
+            const textEl = loadingEl.querySelector('.loading-text');
+            textEl.textContent = message;
+            loadingEl.style.display = 'flex';
+        }
+
+        // グローバルローディング非表示
+        function hideGlobalLoading() {
+            const loadingEl = document.getElementById('globalLoading');
+            loadingEl.style.display = 'none';
+        }
+
         // API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbyFxDv-KWnawfsrC2Kl82Gavo_s0ZGqEA4zrPPc3LVY9S3FuL_dC7QgkYv5hMeeiQo8/exec';
         
@@ -682,27 +739,37 @@
         }
 
         // API呼び出し
-        async function callAPI(action, data) {
-            const params = new URLSearchParams();
-            params.append('action', action);
-            
-            for (const key in data) {
-                params.append(key, data[key]);
+        async function callAPI(action, data, showLoading = true) {
+            if (showLoading) {
+                showGlobalLoading();
             }
             
-            const response = await fetch(API_URL + '?' + params.toString(), {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: action,
-                    ...data
-                })
-            });
+            try {
+                const params = new URLSearchParams();
+                params.append('action', action);
+                
+                for (const key in data) {
+                    params.append(key, data[key]);
+                }
+                
+                const response = await fetch(API_URL + '?' + params.toString(), {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: action,
+                        ...data
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                return await response.json();
+            } finally {
+                if (showLoading) {
+                    hideGlobalLoading();
+                }
             }
-
-            return await response.json();
         }
     </script>
 </body>
