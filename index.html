@@ -599,7 +599,6 @@
         // 初期化
         window.addEventListener('DOMContentLoaded', function() {
             checkMemberAuth();
-            loadRankings();
         });
 
         // 会員認証チェック
@@ -615,15 +614,41 @@
             }
         }
 
+        // ユーザーデータ読み込み（Bulk API使用）
+        async function loadUserData(uniqueID) {
+            try {
+                // 1回のAPI呼び出しで全データ取得
+                const result = await callAPI('getUserDataBulk', { uniqueID: uniqueID });
+                
+                if (result.success) {
+                    // ユーザー情報と残高表示
+                    showUserInfo(result.data.user.uniqueID, result.data.user.displayName);
+                    document.getElementById('balanceShow').textContent = result.data.user.balance;
+                    
+                    // ランキング表示
+                    displayRanking('rankingBalance', result.data.balanceRanking, 'DNG');
+                    displayRanking('rankingHighLow', result.data.highLowRanking, 'DNG');
+                    
+                    // キャッシュに保存
+                    localStorage.setItem('rankingBalance', JSON.stringify(result.data.balanceRanking));
+                    localStorage.setItem('rankingHighLow', JSON.stringify(result.data.highLowRanking));
+                    localStorage.setItem('rankingCacheTime', Date.now().toString());
+                } else {
+                    console.error('データ取得失敗:', result.message);
+                }
+            } catch (error) {
+                console.error('データの読み込みに失敗:', error);
+            }
+        }
+
         // ユーザーチェック
         function checkUser() {
             const uniqueID = localStorage.getItem('playerUniqueID');
             const displayName = localStorage.getItem('displayName');
 
             if (uniqueID && displayName) {
-                // 既存ユーザー
-                showUserInfo(uniqueID, displayName);
-                loadBalance(uniqueID);
+                // 既存ユーザー - Bulk APIでデータ読み込み
+                loadUserData(uniqueID);
             } else {
                 // 新規ユーザー
                 document.getElementById('firstTimeModal').classList.add('active');
@@ -655,8 +680,7 @@
 
                 // モーダルを閉じてユーザー情報表示
                 document.getElementById('firstTimeModal').classList.remove('active');
-                showUserInfo(uniqueID, displayName);
-                loadBalance(uniqueID);
+                loadUserData(uniqueID);
                 
                 alert('登録完了！あなたのIDは ' + uniqueID + ' です。\n大切に保管してください。');
             } catch (error) {
@@ -705,8 +729,7 @@
                     // モーダルを閉じてユーザー情報表示
                     setTimeout(() => {
                         document.getElementById('existingUserModal').classList.remove('active');
-                        showUserInfo(result.data.uniqueID, result.data.displayName);
-                        loadBalance(result.data.uniqueID);
+                        loadUserData(result.data.uniqueID);
                         
                         alert('ログイン成功！おかえりなさい、' + result.data.displayName + 'さん');
                         
@@ -754,77 +777,28 @@
         }
 
         // 残高読み込み
-        async function loadBalance(uniqueID) {
-            try {
-                const result = await callAPI('getBalance', { uniqueID: uniqueID });
-                
-                if (result.success) {
-                    document.getElementById('balanceShow').textContent = result.data.balance;
-                }
-            } catch (error) {
-                console.error('残高の読み込みに失敗:', error);
-            }
-        }
 
-        // 残高更新
+        // 残高更新（Bulk APIで全データ更新）
         function refreshBalance() {
             const uniqueID = localStorage.getItem('playerUniqueID');
             if (uniqueID) {
-                loadBalance(uniqueID);
+                loadUserData(uniqueID);
                 alert('残高を更新しました');
             }
         }
 
-        // ランキング更新
+        // ランキング更新（Bulk APIで全データ更新）
         function refreshRankings() {
-            // キャッシュをクリア
-            localStorage.removeItem('rankingCacheTime');
-            localStorage.removeItem('rankingBalance');
-            localStorage.removeItem('rankingHighLow');
-            
-            // ランキングを再読み込み
-            loadRankings();
-            alert('ランキングを更新しました');
-        }
-
-        // ランキング読み込み
-        async function loadRankings() {
-            // キャッシュチェック
-            const cachedTime = localStorage.getItem('rankingCacheTime');
-            const now = Date.now();
-            
-            if (cachedTime && (now - parseInt(cachedTime)) < CACHE_DURATION) {
-                // キャッシュから読み込み
-                const cachedBalance = localStorage.getItem('rankingBalance');
-                const cachedHighLow = localStorage.getItem('rankingHighLow');
+            const uniqueID = localStorage.getItem('playerUniqueID');
+            if (uniqueID) {
+                // キャッシュをクリア
+                localStorage.removeItem('rankingCacheTime');
+                localStorage.removeItem('rankingBalance');
+                localStorage.removeItem('rankingHighLow');
                 
-                if (cachedBalance) displayRanking('rankingBalance', JSON.parse(cachedBalance), 'DNG');
-                if (cachedHighLow) displayRanking('rankingHighLow', JSON.parse(cachedHighLow), 'DNG');
-                return;
-            }
-
-            // APIから取得
-            try {
-                // Bank残高ランキング
-                const balanceResult = await callAPI('getRanking', {});
-                if (balanceResult.success) {
-                    displayRanking('rankingBalance', balanceResult.data.ranking, 'DNG');
-                    localStorage.setItem('rankingBalance', JSON.stringify(balanceResult.data.ranking));
-                }
-
-                // HIGH & LOW最高得点
-                const highLowResult = await callAPI('getGameHighScores', { gameName: 'HIGH & LOW' });
-                if (highLowResult.success) {
-                    displayRanking('rankingHighLow', highLowResult.data.ranking, 'DNG');
-                    localStorage.setItem('rankingHighLow', JSON.stringify(highLowResult.data.ranking));
-                }
-
-                // キャッシュ時刻を保存
-                localStorage.setItem('rankingCacheTime', now.toString());
-            } catch (error) {
-                console.error('ランキングの読み込みに失敗:', error);
-                document.getElementById('rankingBalance').innerHTML = '<p style="color:#f00;">読み込みエラー</p>';
-                document.getElementById('rankingHighLow').innerHTML = '<p style="color:#f00;">読み込みエラー</p>';
+                // Bulk APIで全データ再読み込み
+                loadUserData(uniqueID);
+                alert('ランキングを更新しました');
             }
         }
 
@@ -957,8 +931,7 @@
                 localStorage.setItem('displayName', displayName);
 
                 document.getElementById('firstTimeModal').classList.remove('active');
-                showUserInfo(uniqueID, displayName);
-                loadBalance(uniqueID);
+                loadUserData(uniqueID);
                 
                 alert('ゲストとしてログインしました！\n設定から表示名を変更できます。');
             } catch (error) {
